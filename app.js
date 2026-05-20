@@ -118,6 +118,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function bindEvents() {
   document.getElementById("generatorForm").addEventListener("input", renderOutput);
+  fields.events.addEventListener("input", debounce(() => {
+    if (getValue("events")) {
+      parseEvents(false);
+      renderOutput();
+    }
+  }, 120));
+
   fields.carrier.addEventListener("change", () => {
     applyCarrierDefaults(fields.carrier.value, false);
     setValue("partner", fields.carrier.value);
@@ -138,6 +145,14 @@ function bindEvents() {
       copyField(button.dataset.copy);
     });
   });
+}
+
+function debounce(callback, delay) {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => callback(...args), delay);
+  };
 }
 
 async function loadDescriptionData() {
@@ -262,14 +277,14 @@ function parseEvents(showStatus) {
   const failureType = inferFailureType(text, bdesk);
   const routeFromHosts = extractRouteFromHosts(hosts);
 
-  if (designations.length) setValue("designations", designations.join("\n"));
-  if (firstDate) setValue("failureTime", firstDate);
-  if (bdesk) setValue("bdeskTitle", bdesk);
-  if (ticket) setValue("internalTicket", ticket);
-  if (hosts[0]) setValue("hostA", hosts[0]);
-  if (hosts[1]) setValue("hostB", hosts[1]);
-  if (trecho.origin || routeFromHosts.origin) setValue("origin", trecho.origin || routeFromHosts.origin);
-  if (trecho.destination || routeFromHosts.destination) setValue("destination", trecho.destination || routeFromHosts.destination);
+  setValue("designations", designations.join("\n"));
+  setValue("failureTime", firstDate);
+  setValue("bdeskTitle", bdesk);
+  setValue("internalTicket", ticket);
+  setValue("hostA", hosts[0] || "");
+  setValue("hostB", hosts[1] || "");
+  setValue("origin", trecho.origin || routeFromHosts.origin || "");
+  setValue("destination", trecho.destination || routeFromHosts.destination || "");
   if (fiber) setValue("fiber", fiber);
   if (failureType) setValue("failureType", failureType);
   setValue("partner", carrier);
@@ -340,18 +355,23 @@ function extractInternalTicket(text) {
 
 function extractHosts(text) {
   const matches = new Set();
-  const patterns = [
-    /\bBR[.-][A-Z]{2}[.-][A-Z0-9]{3,4}[.-][A-Z0-9]{3,4}[.-][A-Z0-9]{2,3}[.-]\d{1,2}/gi,
-  ];
-
-  patterns.forEach((pattern) => {
-    const found = text.match(pattern) || [];
-    found.forEach((host) => matches.add(normalizeHost(host)));
-  });
-
+  extractFullHosts(text).forEach((host) => matches.add(host));
   extractCompactHosts(text).forEach((host) => matches.add(host));
 
   return Array.from(matches).slice(0, 2);
+}
+
+function extractFullHosts(text) {
+  const hosts = [];
+  const pattern = /(^|[^A-Z0-9])((?:BR[.-][A-Z]{2}[.-][A-Z0-9]{3,4}[.-][A-Z0-9]{3,4}[.-][A-Z0-9]{2,3}[.-]\d{1,2}))/gi;
+  let match = pattern.exec(text);
+
+  while (match) {
+    hosts.push(normalizeHost(match[2]));
+    match = pattern.exec(text);
+  }
+
+  return hosts;
 }
 
 function extractCompactHosts(text) {
