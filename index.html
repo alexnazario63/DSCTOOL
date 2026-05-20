@@ -12,7 +12,7 @@
       <section class="workspace animate__animated animate__fadeIn" aria-label="Gerador de descrições NOC">
         <nav class="navbar" aria-label="Navegação principal">
           <div class="brand">
-            <span class="brand-mark" aria-hidden="true">NOC</span>
+            <span class="brand-mark" aria-hidden="true"><i data-lucide="radio-tower"></i></span>
             <div>
               <p class="eyebrow">Developed by Alexsander</p>
               <h1>NOC TOOL</h1>
@@ -22,11 +22,11 @@
           <p class="status" id="status" role="status" aria-live="polite">Pronto para gerar.</p>
 
           <details class="menu">
-            <summary>Opções</summary>
+            <summary><i data-lucide="settings"></i> Opções</summary>
             <div class="menu-panel">
-              <button id="clearButton" type="button">Limpar campos</button>
-              <button id="saveDefaultsButton" type="button">Salvar padrões</button>
-              <button id="downloadButton" type="button">Baixar .txt</button>
+              <button id="clearButton" type="button"><i data-lucide="eraser"></i> Limpar campos</button>
+              <button id="saveDefaultsButton" type="button"><i data-lucide="save"></i> Salvar padrões</button>
+              <button id="downloadButton" type="button"><i data-lucide="download"></i> Baixar .txt</button>
             </div>
           </details>
         </nav>
@@ -35,7 +35,7 @@
           <form class="input-panel" id="generatorForm">
             <section class="panel-section quick-section">
               <label class="field wide">
-                <span>Alarmes, evento ou evidência</span>
+                  <span>Alarmes, evento ou evidência</span>
                 <textarea id="events" rows="7" placeholder="Cole os alarmes aqui. A extração acontece automaticamente."></textarea>
               </label>
               <div class="field-row three compact-fields">
@@ -223,22 +223,23 @@
               <section class="copy-section animate__animated animate__fadeInUp">
                 <h2>Copiar modelos</h2>
                 <div class="copy-grid">
-                  <button class="copy-action" type="button" data-copy-kind="description" data-preview-kind="description" title="Copiar descrição Bdesk">Bdesk</button>
-                  <button class="copy-action" type="button" data-copy-kind="opening" data-preview-kind="opening" title="Copiar abertura NOC">Abertura</button>
-                  <button class="copy-action" type="button" data-copy-kind="update" data-preview-kind="update" title="Copiar atualização NOC">Atualização</button>
-                  <button class="copy-action" type="button" data-copy-kind="email" data-preview-kind="email" title="Copiar e-mail ou solicitação">E-mail</button>
-                  <button class="copy-action" type="button" data-copy-kind="contact" data-preview-kind="contact" title="Copiar contato do parceiro">Contato</button>
+                  <button class="copy-action" type="button" data-copy-kind="description" data-preview-kind="description" title="Copiar descrição Bdesk"><i data-lucide="file-text"></i> Bdesk</button>
+                  <button class="copy-action" type="button" data-copy-kind="recognize" data-preview-kind="recognize" title="Copiar reconhecimento dos alarmes"><i data-lucide="badge-check"></i> Reconhecer alarmes</button>
+                  <button class="copy-action" type="button" data-copy-kind="opening" data-preview-kind="opening" title="Copiar abertura NOC"><i data-lucide="clipboard-list"></i> Abertura</button>
+                  <button class="copy-action" type="button" data-copy-kind="update" data-preview-kind="update" title="Copiar atualização NOC"><i data-lucide="refresh-cw"></i> Atualização</button>
+                  <button class="copy-action" type="button" data-copy-kind="email" data-preview-kind="email" title="Copiar e-mail ou solicitação"><i data-lucide="mail"></i> E-mail</button>
+                  <button class="copy-action" type="button" data-copy-kind="contact" data-preview-kind="contact" title="Copiar contato do parceiro"><i data-lucide="contact"></i> Contato</button>
                 </div>
               </section>
 
               <section class="copy-section animate__animated animate__fadeInUp">
                 <h2>Mensagens padrão</h2>
                 <div class="copy-grid">
-                  <button class="copy-action" type="button" data-copy-kind="charge-0" data-preview-kind="charge-0" title="Copiar pedido de atualização">Atualização?</button>
-                  <button class="copy-action" type="button" data-copy-kind="charge-1" data-preview-kind="charge-1" title="Copiar circuito indisponível">Indisponível</button>
-                  <button class="copy-action" type="button" data-copy-kind="charge-2" data-preview-kind="charge-2" title="Copiar atualização para grupo">Prezados?</button>
-                  <button class="copy-action" type="button" data-copy-kind="charge-3" data-preview-kind="charge-3" title="Copiar cobrança de retorno">Retorno</button>
-                  <button class="copy-action" type="button" data-copy-kind="charge-4" data-preview-kind="charge-4" title="Copiar solicitação de RFO">RFO?</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-0" data-preview-kind="charge-0" title="Copiar pedido de atualização"><i data-lucide="message-circle-question"></i> Atualização?</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-1" data-preview-kind="charge-1" title="Copiar circuito indisponível"><i data-lucide="circle-alert"></i> Indisponível</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-2" data-preview-kind="charge-2" title="Copiar atualização para grupo"><i data-lucide="messages-square"></i> Prezados?</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-3" data-preview-kind="charge-3" title="Copiar cobrança de retorno"><i data-lucide="reply"></i> Retorno</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-4" data-preview-kind="charge-4" title="Copiar solicitação de RFO"><i data-lucide="search-check"></i> RFO?</button>
                 </div>
               </section>
 
@@ -252,6 +253,7 @@
 
             <div class="hidden-outputs" aria-hidden="true">
               <textarea id="descriptionOutput" tabindex="-1"></textarea>
+              <textarea id="recognizeOutput" tabindex="-1"></textarea>
               <textarea id="openingOutput" tabindex="-1"></textarea>
               <textarea id="updateOutput" tabindex="-1"></textarea>
               <textarea id="emailOutput" tabindex="-1"></textarea>
@@ -262,6 +264,7 @@
         </div>
       </section>
     </main>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
   </body>

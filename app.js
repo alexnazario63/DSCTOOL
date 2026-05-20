@@ -214,6 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "hostA",
     "hostB",
     "descriptionOutput",
+    "recognizeOutput",
     "openingOutput",
     "updateOutput",
     "emailOutput",
@@ -229,7 +230,18 @@ document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
   loadDescriptionData();
   renderOutput();
+  renderIcons();
 });
+
+function renderIcons() {
+  if (window.lucide) {
+    lucide.createIcons({
+      attrs: {
+        "stroke-width": 2,
+      },
+    });
+  }
+}
 
 function bindEvents() {
   document.getElementById("generatorForm").addEventListener("input", renderOutput);
@@ -472,7 +484,6 @@ function parseEvents(showStatus) {
   const designations = extractDesignations(text);
   const firstDate = extractFailureTime(text);
   const bdesk = extractBdeskTitle(text);
-  const ticket = extractInternalTicket(text);
   const trecho = extractRoute(text);
   const hosts = extractHosts(text);
   const fiber = extractFiber(text);
@@ -482,7 +493,6 @@ function parseEvents(showStatus) {
   setValue("designations", designations.join("\n"));
   setValue("failureTime", firstDate);
   setValue("bdeskTitle", bdesk);
-  setValue("internalTicket", ticket);
   setValue("hostA", hosts[0] || "");
   setValue("hostB", hosts[1] || "");
   setValue("origin", trecho.origin || routeFromHosts.origin || "");
@@ -924,6 +934,15 @@ function buildCharge() {
   return buildChargeMessages().join("\n\n");
 }
 
+function buildRecognizeAlarms() {
+  const ticket = getValue("internalTicket");
+  const description = fields.descriptionOutput?.value || getValue("bdeskTitle");
+
+  if (!ticket || !description) return "";
+
+  return `Aut Bdesk:# ${ticket} - ${description}`;
+}
+
 function buildContactInfo() {
   const partner = getValue("carrier") || getValue("partner");
   const contact = getPartnerContact(partner);
@@ -991,6 +1010,7 @@ function renderOutput() {
   fields.updateOutput.value = buildUpdate();
   fields.emailOutput.value = buildEmail();
   fields.chargeOutput.value = buildCharge();
+  fields.recognizeOutput.value = buildRecognizeAlarms();
   fields.contactOutput.value = buildContactInfo();
 }
 
@@ -1035,9 +1055,10 @@ function buildTelebrasContact() {
   return [name, contact].filter(Boolean).join(", ");
 }
 
-function getGeneratedText(kind) {
+function getRawGeneratedText(kind) {
   const map = {
     description: fields.descriptionOutput.value,
+    recognize: fields.recognizeOutput.value,
     opening: fields.openingOutput.value,
     update: fields.updateOutput.value,
     email: fields.emailOutput.value,
@@ -1051,7 +1072,97 @@ function getGeneratedText(kind) {
   return map[kind] || "";
 }
 
+function getGeneratedText(kind) {
+  if (getMissingFields(kind).length) return "";
+  return getRawGeneratedText(kind);
+}
+
+function getMissingFields(kind) {
+  const chargeMatch = kind.match(/^charge-(\d+)$/);
+  if (chargeMatch) {
+    return requiredFields([
+      ["Protocolo externo ou chamado interno", () => getValue("externalTicket") || getValue("internalTicket")],
+      ["Saudação", () => getValue("greeting")],
+    ]);
+  }
+
+  const requirements = {
+    description: [
+      ["Operadora/parceiro", () => getValue("carrier") || getValue("partner")],
+      ["Tipo de falha", () => getValue("failureType")],
+      ["Hostname A", () => getValue("hostA")],
+      ["Hostname B ou modo ponta única", () => getValue("hostB") || getValue("descriptionMode") === "single" || isSinglePointFailure(normalizeText(getValue("failureType")))],
+    ],
+    recognize: [
+      ["Chamado interno", () => getValue("internalTicket")],
+      ["Descrição Bdesk", () => fields.descriptionOutput.value],
+    ],
+    opening: [
+      ["Alarmes/evento", () => getValue("events")],
+      ["Sintoma/reclamação", () => getValue("symptom")],
+      ["Diagnóstico", () => getValue("diagnosis")],
+      ["Facilidades", () => getValue("facilities")],
+      ["Ação tomada", () => getValue("actionTaken")],
+      ["Próxima ação", () => getValue("nextAction")],
+    ],
+    update: [
+      ["Parceiro", () => getValue("carrier") || getValue("partner")],
+      ["Falado com", () => getValue("spokenWith")],
+      ["Canal", () => getValue("channel")],
+      ["Previsão", () => getValue("forecast")],
+    ],
+    email: getEmailRequirements(),
+    contact: [
+      ["Parceiro", () => getValue("carrier") || getValue("partner")],
+      ["Contato cadastrado", () => Boolean(getPartnerContact(getValue("carrier") || getValue("partner")))],
+    ],
+    charge: [
+      ["Protocolo externo ou chamado interno", () => getValue("externalTicket") || getValue("internalTicket")],
+      ["Saudação", () => getValue("greeting")],
+    ],
+  };
+
+  return requiredFields(requirements[kind] || []);
+}
+
+function getEmailRequirements() {
+  const carrier = normalizeCarrierKey(getValue("carrier"));
+
+  if (carrier === "TELEBRAS") {
+    return [
+      ["Circuito/designação", () => firstDesignation() || getValue("designations")],
+      ["Nome Telebras", () => getValue("requesterName")],
+      ["Contato", () => getValue("contact")],
+      ["Horário da falha", () => getValue("failureTime")],
+    ];
+  }
+
+  return [
+    ["Destinatários", () => getValue("recipients")],
+    ["Designações", () => getValue("designations")],
+    ["Origem", () => getValue("origin")],
+    ["Destino", () => getValue("destination")],
+    ["Horário da falha", () => getValue("failureTime")],
+    ["Chamado interno", () => getValue("internalTicket")],
+    ["Contato", () => getValue("contact")],
+  ];
+}
+
+function requiredFields(requirements) {
+  return requirements
+    .filter(([, predicate]) => !predicate())
+    .map(([label]) => label);
+}
+
 async function copyGenerated(kind) {
+  const missing = getMissingFields(kind);
+  if (missing.length) {
+    const message = `Complete: ${missing.join(", ")}.`;
+    setStatus(message);
+    showToast(message, "info");
+    return;
+  }
+
   const text = getGeneratedText(kind);
   if (!text) {
     setStatus("Nada para copiar ainda.");
@@ -1078,7 +1189,10 @@ async function copyGenerated(kind) {
 function showPreview(kind) {
   const previewTitle = document.getElementById("previewTitle");
   const previewText = document.getElementById("previewText");
-  const text = getGeneratedText(kind);
+  const missing = getMissingFields(kind);
+  const text = missing.length
+    ? `Complete os campos para gerar:\n- ${missing.join("\n- ")}`
+    : getRawGeneratedText(kind);
 
   if (!previewTitle || !previewText) return;
 
@@ -1092,6 +1206,7 @@ function showPreview(kind) {
 function previewTitleFor(kind) {
   const titles = {
     description: "Descrição Bdesk",
+    recognize: "Reconhecer alarmes",
     opening: "Abertura NOC",
     update: "Atualização NOC",
     email: "E-mail / Solicitação",
@@ -1109,19 +1224,27 @@ function previewTitleFor(kind) {
 function downloadOutput() {
   const carrier = getValue("carrier").toLowerCase();
   const ticket = getValue("internalTicket") || "noc";
-  const content = [
-    "### DESCRIÇÃO BDESK ###",
-    fields.descriptionOutput.value,
-    "",
-    fields.openingOutput.value,
-    "",
-    fields.updateOutput.value,
-    "",
-    fields.emailOutput.value,
-    "",
-    "### COBRANÇA ###",
-    fields.chargeOutput.value,
-  ].join("\n");
+  const sections = [
+    ["DESCRIÇÃO BDESK", "description"],
+    ["RECONHECER ALARMES", "recognize"],
+    ["ABERTURA NOC", "opening"],
+    ["ATUALIZAÇÃO NOC", "update"],
+    ["E-MAIL / SOLICITAÇÃO", "email"],
+    ["COBRANÇA", "charge"],
+    ["CONTATO", "contact"],
+  ]
+    .map(([title, kind]) => {
+      const text = getGeneratedText(kind);
+      return text ? `### ${title} ###\n${text}` : "";
+    })
+    .filter(Boolean);
+
+  if (!sections.length) {
+    showToast("Complete os campos antes de baixar.", "info");
+    return;
+  }
+
+  const content = sections.join("\n\n");
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
