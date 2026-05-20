@@ -3,52 +3,45 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gerador NOC</title>
+    <title>NOC TOOL</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="app-shell">
-      <section class="workspace" aria-label="Gerador de descrições NOC">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">NOC Alloha</p>
-            <h1>Gerador de descrições e carimbos</h1>
+      <section class="workspace animate__animated animate__fadeIn" aria-label="Gerador de descrições NOC">
+        <nav class="navbar" aria-label="Navegação principal">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true">NOC</span>
+            <div>
+              <p class="eyebrow">Developed by Alexsander</p>
+              <h1>NOC TOOL</h1>
+            </div>
           </div>
-          <div class="top-actions">
-            <button class="ghost-button" id="saveDefaultsButton" type="button" title="Salvar contato e nome padrão">
-              <span class="button-icon" aria-hidden="true">✓</span>
-              Salvar padrões
-            </button>
-            <button class="ghost-button danger" id="clearButton" type="button" title="Limpar campos">
-              <span class="button-icon" aria-hidden="true">×</span>
-              Limpar
-            </button>
-          </div>
-        </header>
+
+          <p class="status" id="status" role="status" aria-live="polite">Pronto para gerar.</p>
+
+          <details class="menu">
+            <summary>Opções</summary>
+            <div class="menu-panel">
+              <button id="clearButton" type="button">Limpar campos</button>
+              <button id="saveDefaultsButton" type="button">Salvar padrões</button>
+              <button id="downloadButton" type="button">Baixar .txt</button>
+            </div>
+          </details>
+        </nav>
 
         <div class="tool-grid">
           <form class="input-panel" id="generatorForm">
-            <section class="panel-section">
-              <div class="section-heading">
-                <h2>Entrada rápida</h2>
-                <button class="small-button" id="parseButton" type="button" title="Extrair dados do evento colado">
-                  Extrair do evento
-                </button>
-              </div>
+            <section class="panel-section quick-section">
               <label class="field wide">
-                <span>Evento, alarme ou evidência</span>
-                <textarea id="events" rows="8" placeholder="Cole aqui as linhas RTD, Link down, designações ou trecho..."></textarea>
+                <span>Alarmes, evento ou evidência</span>
+                <textarea id="events" rows="7" placeholder="Cole os alarmes aqui. A extração acontece automaticamente."></textarea>
               </label>
-              <div class="field-row three">
+              <div class="field-row three compact-fields">
                 <label class="field">
                   <span>Operadora</span>
-                  <select id="carrier">
-                    <option value="CLARO">Claro</option>
-                    <option value="TELY">TELY</option>
-                    <option value="TELEBRAS">Telebras</option>
-                    <option value="TIM">TIM</option>
-                    <option value="VIVO">Vivo</option>
-                  </select>
+                  <input list="partnersList" id="carrier" type="text" value="CLARO" autocomplete="off">
                 </label>
                 <label class="field">
                   <span>Chamado interno</span>
@@ -61,218 +54,215 @@
               </div>
             </section>
 
-            <section class="panel-section">
-              <h2>Descrição Bdesk</h2>
-              <div class="field-row four">
-                <label class="field">
-                  <span>Tipo de falha</span>
-                  <input list="failureTypesList" id="failureType" type="text" value="INDISPONIBILIDADE" autocomplete="off">
-                  <datalist id="failureTypesList"></datalist>
-                </label>
-                <label class="field">
-                  <span>Parceiro</span>
-                  <input list="partnersList" id="partner" type="text" autocomplete="off">
-                  <datalist id="partnersList"></datalist>
-                </label>
-                <label class="field">
-                  <span>Fibra</span>
-                  <select id="fiber">
-                    <option>ONLY</option>
-                    <option>WORK</option>
-                    <option>PROT</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span>Modo</span>
-                  <select id="descriptionMode">
-                    <option value="auto">Automático</option>
-                    <option value="single">Ponta única</option>
-                    <option value="route">Duas pontas</option>
-                  </select>
-                </label>
-              </div>
-              <div class="field-row two">
-                <label class="field">
-                  <span>Hostname A</span>
-                  <input id="hostA" type="text" placeholder="BR-RJ-RJO-CTL-TP-02" autocomplete="off">
-                </label>
-                <label class="field">
-                  <span>Hostname B</span>
-                  <input id="hostB" type="text" placeholder="BR-SP-SPO-CTL-TP-04" autocomplete="off">
-                </label>
-              </div>
-            </section>
+            <details class="advanced-drawer">
+              <summary>Campos detectados e ajustes</summary>
+              <div class="advanced-grid">
+                <section class="panel-section">
+                  <h2>Descrição Bdesk</h2>
+                  <div class="field-row four">
+                    <label class="field">
+                      <span>Tipo de falha</span>
+                      <input list="failureTypesList" id="failureType" type="text" value="INDISPONIBILIDADE" autocomplete="off">
+                      <datalist id="failureTypesList"></datalist>
+                    </label>
+                    <label class="field">
+                      <span>Parceiro</span>
+                      <input list="partnersList" id="partner" type="text" autocomplete="off">
+                      <datalist id="partnersList"></datalist>
+                    </label>
+                    <label class="field">
+                      <span>Fibra</span>
+                      <select id="fiber">
+                        <option>ONLY</option>
+                        <option>WORK</option>
+                        <option>PROT</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Modo</span>
+                      <select id="descriptionMode">
+                        <option value="auto">Automático</option>
+                        <option value="single">Ponta única</option>
+                        <option value="route">Duas pontas</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="field-row two">
+                    <label class="field">
+                      <span>Hostname A</span>
+                      <input id="hostA" type="text" placeholder="BR-RJ-RJO-CTL-TP-02" autocomplete="off">
+                    </label>
+                    <label class="field">
+                      <span>Hostname B</span>
+                      <input id="hostB" type="text" placeholder="BR-SP-SPO-CTL-TP-04" autocomplete="off">
+                    </label>
+                  </div>
+                </section>
 
-            <section class="panel-section">
-              <h2>Dados do circuito</h2>
-              <div class="field-row two">
-                <label class="field">
-                  <span>Designações</span>
-                  <textarea id="designations" rows="4" placeholder="CAP:TIM:RJOCOACAP287332-CID:581006"></textarea>
-                </label>
-                <label class="field">
-                  <span>Identificação Bdesk</span>
-                  <textarea id="bdeskTitle" rows="4" placeholder="RJ::IND::RIO DE JANEIRO_CTL&lt;&gt;SAO PAULO_CTL::ONLY::TIM"></textarea>
-                </label>
-              </div>
-              <div class="field-row four">
-                <label class="field">
-                  <span>Origem</span>
-                  <input id="origin" type="text" placeholder="RIO DE JANEIRO">
-                </label>
-                <label class="field">
-                  <span>Destino</span>
-                  <input id="destination" type="text" placeholder="SAO PAULO">
-                </label>
-                <label class="field">
-                  <span>Horário da falha</span>
-                  <input id="failureTime" type="text" placeholder="15/05/2026 13:54">
-                </label>
-                <label class="field">
-                  <span>Contato</span>
-                  <input id="contact" type="text" placeholder="+55 (11) 94706-4266">
-                </label>
-              </div>
-            </section>
+                <section class="panel-section">
+                  <h2>Dados do circuito</h2>
+                  <div class="field-row two">
+                    <label class="field">
+                      <span>Designações</span>
+                      <textarea id="designations" rows="3" placeholder="CAP:TIM:RJOCOACAP287332-CID:581006"></textarea>
+                    </label>
+                    <label class="field">
+                      <span>Identificação Bdesk</span>
+                      <textarea id="bdeskTitle" rows="3" placeholder="RJ::IND::RIO DE JANEIRO_CTL&lt;&gt;SAO PAULO_CTL::ONLY::TIM"></textarea>
+                    </label>
+                  </div>
+                  <div class="field-row four">
+                    <label class="field">
+                      <span>Origem</span>
+                      <input id="origin" type="text" placeholder="RIO DE JANEIRO">
+                    </label>
+                    <label class="field">
+                      <span>Destino</span>
+                      <input id="destination" type="text" placeholder="SAO PAULO">
+                    </label>
+                    <label class="field">
+                      <span>Horário da falha</span>
+                      <input id="failureTime" type="text" placeholder="15/05/2026 13:54">
+                    </label>
+                    <label class="field">
+                      <span>Contato</span>
+                      <input id="contact" type="text" placeholder="+55 (11) 94706-4266">
+                    </label>
+                  </div>
+                </section>
 
-            <section class="panel-section">
-              <h2>Carimbo NOC</h2>
-              <div class="field-row two">
-                <label class="field">
-                  <span>Sintoma/reclamação</span>
-                  <input id="symptom" type="text" value="Capacidade indisponível">
-                </label>
-                <label class="field">
-                  <span>Diagnóstico</span>
-                  <input id="diagnosis" type="text" value="Provável falha na operadora parceira">
-                </label>
-              </div>
-              <div class="field-row three">
-                <label class="field">
-                  <span>Facilidades</span>
-                  <input id="facilities" type="text" value="Segue abaixo">
-                </label>
-                <label class="field">
-                  <span>Ação tomada</span>
-                  <input id="actionTaken" type="text">
-                </label>
-                <label class="field">
-                  <span>Próxima ação</span>
-                  <input id="nextAction" type="text">
-                </label>
-              </div>
-              <div class="field-row four">
-                <label class="field">
-                  <span>Falado com</span>
-                  <input id="spokenWith" type="text">
-                </label>
-                <label class="field">
-                  <span>Canal</span>
-                  <select id="channel">
-                    <option>Email</option>
-                    <option>WhatsApp</option>
-                    <option>Telegram</option>
-                    <option>Telefone</option>
-                    <option>Portal</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span>Previsão</span>
-                  <input id="forecast" type="text" value="Sem previsão">
-                </label>
-                <label class="field">
-                  <span>Telefone/canal extra</span>
-                  <input id="phoneChannel" type="text" placeholder="0800 880 7000">
-                </label>
-              </div>
-            </section>
+                <section class="panel-section">
+                  <h2>Carimbo NOC</h2>
+                  <div class="field-row two">
+                    <label class="field">
+                      <span>Sintoma/reclamação</span>
+                      <input id="symptom" type="text" value="Capacidade indisponível">
+                    </label>
+                    <label class="field">
+                      <span>Diagnóstico</span>
+                      <input id="diagnosis" type="text" value="Provável falha na operadora parceira">
+                    </label>
+                  </div>
+                  <div class="field-row three">
+                    <label class="field">
+                      <span>Facilidades</span>
+                      <input id="facilities" type="text" value="Segue abaixo">
+                    </label>
+                    <label class="field">
+                      <span>Ação tomada</span>
+                      <input id="actionTaken" type="text">
+                    </label>
+                    <label class="field">
+                      <span>Próxima ação</span>
+                      <input id="nextAction" type="text">
+                    </label>
+                  </div>
+                  <div class="field-row four">
+                    <label class="field">
+                      <span>Falado com</span>
+                      <input id="spokenWith" type="text">
+                    </label>
+                    <label class="field">
+                      <span>Canal</span>
+                      <select id="channel">
+                        <option>Email</option>
+                        <option>WhatsApp</option>
+                        <option>Telegram</option>
+                        <option>Telefone</option>
+                        <option>Portal</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Previsão</span>
+                      <input id="forecast" type="text" value="Sem previsão">
+                    </label>
+                    <label class="field">
+                      <span>Telefone/canal extra</span>
+                      <input id="phoneChannel" type="text" placeholder="0800 880 7000">
+                    </label>
+                  </div>
+                </section>
 
-            <section class="panel-section">
-              <h2>E-mail e cobrança</h2>
-              <div class="field-row two">
-                <label class="field">
-                  <span>Destinatários</span>
-                  <textarea id="recipients" rows="3"></textarea>
-                </label>
-                <label class="field">
-                  <span>Cópia</span>
-                  <textarea id="copyTo" rows="3">noc-l@alloha.com</textarea>
-                </label>
+                <section class="panel-section">
+                  <h2>E-mail e cobrança</h2>
+                  <div class="field-row two">
+                    <label class="field">
+                      <span>Destinatários</span>
+                      <textarea id="recipients" rows="3"></textarea>
+                    </label>
+                    <label class="field">
+                      <span>Cópia</span>
+                      <textarea id="copyTo" rows="3">noc-l@alloha.com</textarea>
+                    </label>
+                  </div>
+                  <div class="field-row three">
+                    <label class="field">
+                      <span>Saudação</span>
+                      <select id="greeting">
+                        <option>Bom dia</option>
+                        <option selected>Boa tarde</option>
+                        <option>Boa noite</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Tipo de indisponibilidade</span>
+                      <input id="outageText" type="text" value="transporte de capacidade indisponível">
+                    </label>
+                    <label class="field">
+                      <span>Nome Telebras</span>
+                      <input id="requesterName" type="text" placeholder="alexsander lima nazario">
+                    </label>
+                  </div>
+                </section>
               </div>
-              <div class="field-row three">
-                <label class="field">
-                  <span>Saudação</span>
-                  <select id="greeting">
-                    <option>Bom dia</option>
-                    <option selected>Boa tarde</option>
-                    <option>Boa noite</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span>Tipo de indisponibilidade</span>
-                  <input id="outageText" type="text" value="transporte de capacidade indisponível">
-                </label>
-                <label class="field">
-                  <span>Nome Telebras</span>
-                  <input id="requesterName" type="text" placeholder="alexsander lima nazario">
-                </label>
-              </div>
-            </section>
+            </details>
           </form>
 
-          <aside class="output-panel" aria-label="Campos gerados">
-            <div class="generated-list">
-              <article class="result-card primary-result">
-                <div class="result-heading">
-                  <h2>Descrição Bdesk</h2>
-                  <button class="icon-button copy-field" type="button" data-copy="descriptionOutput" title="Copiar descrição">⧉</button>
+          <aside class="output-panel" aria-label="Copiar campos gerados">
+            <div class="copy-board">
+              <section class="copy-section animate__animated animate__fadeInUp">
+                <h2>Copiar modelos</h2>
+                <div class="copy-grid">
+                  <button class="copy-action" type="button" data-copy-kind="description" data-preview-kind="description" title="Copiar descrição Bdesk">Bdesk</button>
+                  <button class="copy-action" type="button" data-copy-kind="opening" data-preview-kind="opening" title="Copiar abertura NOC">Abertura</button>
+                  <button class="copy-action" type="button" data-copy-kind="update" data-preview-kind="update" title="Copiar atualização NOC">Atualização</button>
+                  <button class="copy-action" type="button" data-copy-kind="email" data-preview-kind="email" title="Copiar e-mail ou solicitação">E-mail</button>
+                  <button class="copy-action" type="button" data-copy-kind="contact" data-preview-kind="contact" title="Copiar contato do parceiro">Contato</button>
                 </div>
-                <textarea id="descriptionOutput" spellcheck="false" readonly aria-label="Descrição Bdesk gerada"></textarea>
-              </article>
+              </section>
 
-              <article class="result-card">
-                <div class="result-heading">
-                  <h2>Abertura NOC</h2>
-                  <button class="icon-button copy-field" type="button" data-copy="openingOutput" title="Copiar abertura">⧉</button>
+              <section class="copy-section animate__animated animate__fadeInUp">
+                <h2>Mensagens padrão</h2>
+                <div class="copy-grid">
+                  <button class="copy-action" type="button" data-copy-kind="charge-0" data-preview-kind="charge-0" title="Copiar pedido de atualização">Atualização?</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-1" data-preview-kind="charge-1" title="Copiar circuito indisponível">Indisponível</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-2" data-preview-kind="charge-2" title="Copiar atualização para grupo">Prezados?</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-3" data-preview-kind="charge-3" title="Copiar cobrança de retorno">Retorno</button>
+                  <button class="copy-action" type="button" data-copy-kind="charge-4" data-preview-kind="charge-4" title="Copiar solicitação de RFO">RFO?</button>
                 </div>
-                <textarea id="openingOutput" spellcheck="false" readonly aria-label="Abertura NOC gerada"></textarea>
-              </article>
+              </section>
 
-              <article class="result-card">
-                <div class="result-heading">
-                  <h2>Atualização NOC</h2>
-                  <button class="icon-button copy-field" type="button" data-copy="updateOutput" title="Copiar atualização">⧉</button>
+              <section class="preview-panel animate__animated animate__fadeInUp" aria-label="Prévia do texto">
+                <div class="preview-heading">
+                  <h2 id="previewTitle">Prévia</h2>
                 </div>
-                <textarea id="updateOutput" spellcheck="false" readonly aria-label="Atualização NOC gerada"></textarea>
-              </article>
-
-              <article class="result-card">
-                <div class="result-heading">
-                  <h2>E-mail / Solicitação</h2>
-                  <button class="icon-button copy-field" type="button" data-copy="emailOutput" title="Copiar e-mail">⧉</button>
-                </div>
-                <textarea id="emailOutput" spellcheck="false" readonly aria-label="E-mail gerado"></textarea>
-              </article>
-
-              <article class="result-card">
-                <div class="result-heading">
-                  <h2>Cobrança</h2>
-                  <button class="icon-button copy-field" type="button" data-copy="chargeOutput" title="Copiar cobrança">⧉</button>
-                </div>
-                <textarea id="chargeOutput" spellcheck="false" readonly aria-label="Cobrança gerada"></textarea>
-              </article>
+                <pre id="previewText">Passe o mouse em um botão para ver uma prévia.</pre>
+              </section>
             </div>
-            <div class="output-actions">
-              <button class="ghost-button" id="downloadButton" type="button" title="Baixar todos os campos gerados">
-                <span class="button-icon" aria-hidden="true">↓</span>
-                Baixar .txt
-              </button>
+
+            <div class="hidden-outputs" aria-hidden="true">
+              <textarea id="descriptionOutput" tabindex="-1"></textarea>
+              <textarea id="openingOutput" tabindex="-1"></textarea>
+              <textarea id="updateOutput" tabindex="-1"></textarea>
+              <textarea id="emailOutput" tabindex="-1"></textarea>
+              <textarea id="chargeOutput" tabindex="-1"></textarea>
+              <textarea id="contactOutput" tabindex="-1"></textarea>
             </div>
-            <p class="status" id="status" role="status" aria-live="polite">Pronto para gerar.</p>
           </aside>
         </div>
       </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
   </body>
 </html>

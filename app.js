@@ -52,6 +52,120 @@ const carrierProfiles = {
   },
 };
 
+const partnerContacts = {
+  VIVO: {
+    display: "Vivo / Telefonica",
+    aliases: ["TELEFONICA"],
+    recipients: "swap_backbone@indrabrasil.com.br; cire_backbone@indrabrasil.com.br",
+    details: ['Supervisora "Camila Silvestre Botelho" <camila.botelho@telefonica.com>'],
+  },
+  TIM: {
+    display: "TIM",
+    recipients: "corporate@timbrasil.com.br",
+    phone: "0800 888 2018",
+  },
+  TELXIUS: {
+    display: "Telxius",
+    recipients: "Customerservice.capacity@telxius.com; customerservice.ip@telxius.com; manageronduty@telxius.com",
+  },
+  TIWS: {
+    display: "Tiws",
+  },
+  "ANGOLA TELECOM": {
+    display: "Angola Telecom",
+  },
+  CIRION: {
+    display: "L3 / Lumen / Century / Cirion",
+    aliases: ["L3", "LUMEN", "CENTURY"],
+    portal: "https://portal.ciriontechnologies.com/portal/#/login",
+    user: "noc-L@alloha.com",
+    password: "Alloha@2023",
+    phone: "0800 887 3333 / +55 11 3957 2288",
+    details: ["Alloha@20252025"],
+  },
+  INTERNEXA: {
+    display: "Internexa",
+  },
+  RNP: {
+    display: "RNP",
+    recipients: "atendimento@rnp.br",
+    phone: "+55 800 722 0216",
+  },
+  ITS: {
+    display: "ITS",
+    recipients: "suporte@itsbrasil.net",
+  },
+  TELY: {
+    display: "Tely",
+    recipients: '"Monitoramento" <monitoramento@tely.com.br>',
+  },
+  FLOWBIX: {
+    display: "Flowbix",
+    recipients: "meajuda@flowbix.com",
+    phone: "+55 16 3190-1173",
+    portal: "https://lkar.in/CmDT",
+  },
+  ANTEL: {
+    display: "Antel",
+    recipients: '"Customer Service" <customer-service@antel.net.uy>',
+  },
+  "ANET": {
+    display: "ANET / SuperConnect",
+    aliases: ["SUPERCONNECT"],
+  },
+  BRDIGITAL: {
+    display: "BRDIGITAL",
+    aliases: ["BR DIGITAL"],
+    recipients: "noc@br.digital",
+    phone: "Telefone/WhatsApp: 51 3022-9350",
+  },
+  GIGACANDANGA: {
+    display: "Gigacandanga",
+    recipients: 'pablo.maia@gigacandanga.net.br; "Valdir Silvério" <valdir.silverio@gigacandanga.net.br>; "Rafael Alves" <rafael.alves@gigacandanga.net.br>; "cristiane amorim" <cristiane.amorim@gigacandanga.net.br>; "Pablo Maia" <pablo.maia@gigacandanga.net.br>; contatos@gigacandanga.net.br',
+  },
+  GLOBENET: {
+    display: "Globenet",
+    recipients: '"GlobeNet NOC" <noc@globenet.net>',
+  },
+  "SEA TELECOM": {
+    display: "Sea Telecom",
+    recipients: "noc@seatelecom.com.br",
+  },
+  UPIX: {
+    display: "Upix / 76Telecom",
+    aliases: ["76TELECOM", "76 TELECOM"],
+    recipients: '"support@upixnetworks.com" <support@upixnetworks.com>',
+  },
+  ALARES: {
+    display: "Alares Telecom / Cabo Telecom",
+    aliases: ["ALARES TELECOM", "CABO TELECOM"],
+    phone: "+55 35 9255-3300 / +55 19 2018-6821",
+    details: ["Portal Wpp"],
+  },
+  SOFTCOM: {
+    display: "Softcom",
+    recipients: '"Suporte NOC" <suporte@softdados.com>',
+  },
+  "ORA TELECOM": {
+    display: "ORA Telecom",
+    recipients: "cgr@oratelecom.com.br",
+    phone: "WhatsApp: +55 86 2106-0202",
+  },
+  UMTELECOM: {
+    display: "UMTELECOM",
+    aliases: ["UM TELECOM"],
+    recipients: '"Suporte Um Telecom" <suporte@1telecom.com.br>',
+    phone: "WhatsApp: +55 55 3003-8411",
+  },
+  ZATEC: {
+    display: "ZATEC",
+  },
+  ALGAR: {
+    display: "Algar",
+    phone: "+55 34 9889-2822",
+  },
+};
+
 const descriptionData = {
   cnl: [],
   failureTypes: {},
@@ -104,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "updateOutput",
     "emailOutput",
     "chargeOutput",
+    "contactOutput",
     "status",
   ].forEach((id) => {
     fields[id] = document.getElementById(id);
@@ -131,8 +246,15 @@ function bindEvents() {
     renderOutput();
   });
 
-  document.getElementById("parseButton").addEventListener("click", () => {
-    parseEvents(true);
+  fields.carrier.addEventListener("input", debounce(() => {
+    const carrier = normalizeCarrierKey(fields.carrier.value);
+    if (carrierProfiles[carrier]) applyCarrierDefaults(carrier, false);
+    setValue("partner", carrier || fields.carrier.value);
+    renderOutput();
+  }, 120));
+
+  fields.failureType.addEventListener("input", () => {
+    syncSymptomWithFailureType();
     renderOutput();
   });
 
@@ -140,9 +262,17 @@ function bindEvents() {
   document.getElementById("clearButton").addEventListener("click", clearForm);
   document.getElementById("saveDefaultsButton").addEventListener("click", saveDefaults);
 
-  document.querySelectorAll(".copy-field").forEach((button) => {
+  document.querySelectorAll(".copy-action").forEach((button) => {
     button.addEventListener("click", () => {
-      copyField(button.dataset.copy);
+      copyGenerated(button.dataset.copyKind);
+    });
+
+    button.addEventListener("mouseenter", () => {
+      showPreview(button.dataset.previewKind);
+    });
+
+    button.addEventListener("focus", () => {
+      showPreview(button.dataset.previewKind);
     });
   });
 }
@@ -168,7 +298,7 @@ async function loadDescriptionData() {
     descriptionData.partners = partners;
     descriptionData.loaded = true;
     fillDatalist("failureTypesList", Object.keys(descriptionData.failureTypes));
-    fillDatalist("partnersList", descriptionData.partners);
+    fillDatalist("partnersList", mergePartnerOptions(descriptionData.partners));
     renderOutput();
     setStatus("Dados de descrição carregados.");
   } catch (error) {
@@ -207,6 +337,18 @@ function fillDatalist(id, values) {
     .join("");
 }
 
+function mergePartnerOptions(values) {
+  const options = new Set(values.map((value) => String(value).trim()).filter(Boolean));
+
+  Object.entries(partnerContacts).forEach(([key, contact]) => {
+    options.add(contact.display || key);
+    options.add(key);
+    (contact.aliases || []).forEach((alias) => options.add(alias));
+  });
+
+  return Array.from(options).sort((a, b) => a.localeCompare(b));
+}
+
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -217,11 +359,66 @@ function escapeHtml(value) {
   })[char]);
 }
 
+function normalizeCarrierKey(value) {
+  return (value || "").trim().toUpperCase();
+}
+
+function normalizePartnerLookup(value) {
+  return normalizeCarrierKey(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function getPartnerContact(value = getValue("carrier")) {
+  const lookup = normalizePartnerLookup(value);
+  if (!lookup) return null;
+
+  return Object.entries(partnerContacts).find(([key, contact]) => {
+    const options = [key, contact.display, ...(contact.aliases || [])].map(normalizePartnerLookup);
+    return options.includes(lookup);
+  })?.[1] || null;
+}
+
+function getCarrierProfile(value = getValue("carrier")) {
+  const key = normalizeCarrierKey(value);
+  const contact = getPartnerContact(key);
+  const display = contact?.display || key || "Operadora";
+  const knownProfile = carrierProfiles[key];
+
+  if (knownProfile) {
+    return {
+      ...knownProfile,
+      recipients: contact?.recipients || knownProfile.recipients,
+      display,
+      spokenWith: display,
+      phoneChannel: knownProfile.phoneChannel,
+      contact,
+    };
+  }
+
+  return {
+    display,
+    recipients: contact?.recipients || "",
+    actionTaken: `Aberto chamado junto a ${display}`,
+    nextAction: `Cobrar ${display} em 1 hora`,
+    spokenWith: display,
+    channel: "Email",
+    phoneChannel: "",
+    outageText: "transporte de capacidade indisponível",
+    emailIntro: `Estamos com transporte de capacidade indisponível verificar com urgência?`,
+    contact,
+  };
+}
+
 function applyCarrierDefaults(carrier, initialLoad) {
-  const profile = carrierProfiles[carrier];
-  if (!profile) return;
+  const key = normalizeCarrierKey(carrier);
+  const profile = getCarrierProfile(key);
 
   const defaults = readDefaults();
+  if (key) setValue("carrier", key);
   setValue("recipients", profile.recipients);
   setValue("actionTaken", profile.actionTaken);
   setValue("nextAction", profile.nextAction);
@@ -229,7 +426,7 @@ function applyCarrierDefaults(carrier, initialLoad) {
   setValue("channel", profile.channel);
   setValue("outageText", profile.outageText);
   setValue("phoneChannel", profile.phoneChannel || "");
-  setValue("partner", carrier);
+  setValue("partner", key);
 
   if (!initialLoad || !fields.contact.value) {
     setValue("contact", defaults.contact || "");
@@ -246,6 +443,11 @@ function updateGreeting() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   fields.greeting.value = greeting;
+}
+
+function syncSymptomWithFailureType() {
+  const failureType = getValue("failureType");
+  if (failureType) setValue("symptom", failureType);
 }
 
 function setValue(id, value) {
@@ -287,6 +489,7 @@ function parseEvents(showStatus) {
   setValue("destination", trecho.destination || routeFromHosts.destination || "");
   if (fiber) setValue("fiber", fiber);
   if (failureType) setValue("failureType", failureType);
+  syncSymptomWithFailureType();
   setValue("partner", carrier);
 
   if (showStatus) {
@@ -605,14 +808,52 @@ function buildOpening() {
     `PRÓXIMA AÇÃO: ${getValue("nextAction")};`,
   ];
 
-  const description = getValue("bdeskTitle");
-  if (description) lines.push("", description);
+  const formattedEvents = formatOpeningEvents(getValue("events"));
+  if (formattedEvents) lines.push("", formattedEvents);
 
   return lines.join("\n");
 }
 
+function formatOpeningEvents(eventsText) {
+  const lines = splitLines(eventsText);
+  if (!lines.length) return "";
+
+  const groups = groupAlarmLinesByHost(lines);
+  if (groups.length <= 1) return lines.join("\n");
+
+  return groups
+    .map((group, index) => [`HOST ${index + 1}:`, ...group.lines].join("\n"))
+    .join("\n\n");
+}
+
+function groupAlarmLinesByHost(lines) {
+  const groups = [];
+
+  lines.forEach((line) => {
+    const host = extractPrimaryLineHost(line) || "SEM_HOST";
+    let group = groups.find((item) => item.host === host);
+
+    if (!group) {
+      group = { host, lines: [] };
+      groups.push(group);
+    }
+
+    group.lines.push(line);
+  });
+
+  return groups;
+}
+
+function extractPrimaryLineHost(line) {
+  const fullHosts = extractFullHosts(line);
+  if (fullHosts.length) return fullHosts[0];
+
+  const compactHosts = extractCompactHosts(line);
+  return compactHosts[0] || "";
+}
+
 function buildUpdate() {
-  const profile = carrierProfiles[getValue("carrier")];
+  const profile = getCarrierProfile();
   const spoken = getValue("spokenWith") || profile.display;
   const channel = getValue("channel");
   const lines = [
@@ -634,10 +875,10 @@ function buildUpdate() {
 }
 
 function buildEmail() {
-  const carrier = getValue("carrier");
+  const carrier = normalizeCarrierKey(getValue("carrier"));
   if (carrier === "TELEBRAS") return buildTelebrasRequest();
 
-  const profile = carrierProfiles[carrier];
+  const profile = getCarrierProfile(carrier);
   const lines = [
     getValue("recipients"),
     getValue("copyTo"),
@@ -680,19 +921,41 @@ function buildTelebrasRequest() {
 }
 
 function buildCharge() {
+  return buildChargeMessages().join("\n\n");
+}
+
+function buildContactInfo() {
+  const partner = getValue("carrier") || getValue("partner");
+  const contact = getPartnerContact(partner);
+
+  if (!contact) {
+    return partner ? `Sem contato cadastrado para ${partner}.` : "Selecione um parceiro para ver contatos.";
+  }
+
+  const lines = [`Parceiro: ${contact.display}`];
+  if (contact.recipients) lines.push(`E-mail: ${contact.recipients}`);
+  if (contact.phone) lines.push(`Telefone/Canal: ${contact.phone}`);
+  if (contact.portal) lines.push(`Portal: ${contact.portal}`);
+  if (contact.user) lines.push(`Usuário: ${contact.user}`);
+  if (contact.password) lines.push(`Senha: ${contact.password}`);
+  (contact.details || []).forEach((detail) => lines.push(`Obs: ${detail}`));
+
+  return lines.join("\n");
+}
+
+function buildChargeMessages() {
   const external = getValue("externalTicket") || getValue("internalTicket");
-  const carrier = carrierProfiles[getValue("carrier")].display;
+  const carrier = getCarrierProfile().display;
   const greeting = getValue("greeting");
   const designator = external ? ` ${external}` : "";
 
   return [
     `${greeting}, temos alguma atualização deste chamado${designator} ?`,
-    "",
     `${greeting}, circuito${designator} permanece indisponível.`,
-    "",
     `${greeting} prezados temos atualizações do chamado${designator} ?`,
     `${greeting}, ${carrier}, seguimos no aguardo de atualização do chamado${designator}.`,
-  ].join("\n");
+    `${greeting}, validado circuito/host normalizado. Temos RFO ou causa raiz?`,
+  ];
 }
 
 function buildComplete() {
@@ -728,6 +991,7 @@ function renderOutput() {
   fields.updateOutput.value = buildUpdate();
   fields.emailOutput.value = buildEmail();
   fields.chargeOutput.value = buildCharge();
+  fields.contactOutput.value = buildContactInfo();
 }
 
 function splitLines(text) {
@@ -771,18 +1035,75 @@ function buildTelebrasContact() {
   return [name, contact].filter(Boolean).join(", ");
 }
 
-async function copyField(fieldId) {
-  const target = fields[fieldId];
-  if (!target) return;
+function getGeneratedText(kind) {
+  const map = {
+    description: fields.descriptionOutput.value,
+    opening: fields.openingOutput.value,
+    update: fields.updateOutput.value,
+    email: fields.emailOutput.value,
+    contact: fields.contactOutput.value,
+    charge: fields.chargeOutput.value,
+  };
+
+  const chargeMatch = kind.match(/^charge-(\d+)$/);
+  if (chargeMatch) return buildChargeMessages()[Number(chargeMatch[1])] || "";
+
+  return map[kind] || "";
+}
+
+async function copyGenerated(kind) {
+  const text = getGeneratedText(kind);
+  if (!text) {
+    setStatus("Nada para copiar ainda.");
+    showToast("Nada para copiar ainda.", "info");
+    return;
+  }
 
   try {
-    await navigator.clipboard.writeText(target.value);
+    await navigator.clipboard.writeText(text);
     setStatus("Texto copiado.");
+    showToast("Copiado para a área de transferência.");
   } catch (error) {
-    target.select();
+    const fallback = document.createElement("textarea");
+    fallback.value = text;
+    document.body.appendChild(fallback);
+    fallback.select();
     document.execCommand("copy");
+    fallback.remove();
     setStatus("Texto copiado pela seleção.");
+    showToast("Copiado pela seleção.");
   }
+}
+
+function showPreview(kind) {
+  const previewTitle = document.getElementById("previewTitle");
+  const previewText = document.getElementById("previewText");
+  const text = getGeneratedText(kind);
+
+  if (!previewTitle || !previewText) return;
+
+  previewTitle.textContent = previewTitleFor(kind);
+  previewText.textContent = text || "Preencha os alarmes e campos principais para gerar este texto.";
+  previewText.classList.remove("animate__animated", "animate__fadeIn");
+  void previewText.offsetWidth;
+  previewText.classList.add("animate__animated", "animate__fadeIn");
+}
+
+function previewTitleFor(kind) {
+  const titles = {
+    description: "Descrição Bdesk",
+    opening: "Abertura NOC",
+    update: "Atualização NOC",
+    email: "E-mail / Solicitação",
+    contact: "Contato do parceiro",
+    "charge-0": "Mensagem padrão",
+    "charge-1": "Mensagem padrão",
+    "charge-2": "Mensagem padrão",
+    "charge-3": "Mensagem padrão",
+    "charge-4": "Mensagem padrão",
+  };
+
+  return titles[kind] || "Prévia";
 }
 
 function downloadOutput() {
@@ -811,9 +1132,13 @@ function downloadOutput() {
   link.remove();
   URL.revokeObjectURL(url);
   setStatus("Arquivo .txt gerado.");
+  showToast("Arquivo .txt gerado.");
 }
 
-function clearForm() {
+async function clearForm() {
+  const confirmed = window.confirm("Limpar campos? Os alarmes e campos detectados serão apagados.");
+  if (!confirmed) return;
+
   [
     "events",
     "internalTicket",
@@ -830,10 +1155,12 @@ function clearForm() {
 
   applyCarrierDefaults(getValue("carrier"), true);
   setValue("failureType", "INDISPONIBILIDADE");
+  syncSymptomWithFailureType();
   setValue("fiber", "ONLY");
   setValue("descriptionMode", "auto");
   renderOutput();
   setStatus("Campos limpos.");
+  showToast("Campos limpos.", "success");
 }
 
 function readDefaults() {
@@ -858,8 +1185,29 @@ function saveDefaults() {
 
   localStorage.setItem("nocGeneratorDefaults", JSON.stringify(defaults));
   setStatus("Padrões salvos neste navegador.");
+  showToast("Padrões salvos.");
 }
 
 function setStatus(message) {
   fields.status.textContent = message;
+}
+
+function showToast(message, icon = "success") {
+  if (!window.Swal) return;
+
+  Swal.fire({
+    toast: true,
+    position: "top-end",
+    icon,
+    title: message,
+    showConfirmButton: false,
+    timer: 1700,
+    timerProgressBar: true,
+    showClass: {
+      popup: "animate__animated animate__fadeInDown",
+    },
+    hideClass: {
+      popup: "animate__animated animate__fadeOutUp",
+    },
+  });
 }
